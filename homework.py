@@ -26,14 +26,14 @@ HOMEWORK_STATUSES = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
-# message = HOMEWORK_STATUSES
+
 def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
     try:
         logger.info('Бот отправляет сообщение в телеграм.', message)
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except telegram.error.TelegramError(message):
-        logger.info('Ошибка отправки сообщения в телеграм.')
+        logger.error('Ошибка отправки сообщения в телеграм.')
     else:
         logger.info('Сообщение в телеграм успешно отправлено.')
 
@@ -48,35 +48,38 @@ def get_api_answer(current_timestamp):
         if response.status_code == HTTPStatus.OK:
             return response.json()
         else:
+            # logger.error('Эндпоинт не доступен.')
             raise ApiErrorException('Эндпоинт не доступен.')
     except requests.exceptions.RequestException:
         raise ApiErrorException('Ошибка подключения к эндпоинту Api-сервиса.')
-
-        #logger.error('Эндпоинт не доступен')
 
 
 def check_response(response):
     """Проверяет ответ API на корректность."""
     logger.info('Проверка ответа от API начата')
-    homework_list = response.get('homeworks')
+    homework_list = response['homeworks']
     if 'homeworks' not in response:
         raise TypeError('В ответе API нет ключа домашнее задание')
-
     if not isinstance(homework_list, list):
         raise TypeError(
             f'Ответ от API не является списком: response = {response}'
         )
-
     return homework_list
 
 
 def parse_status(homework):
     """Извлекает из информации статус домашней работы."""
     logger.info('Проверка статуса домашней работы начата.')
-    homework_name = homework.get('homework_name')
-    homework_status = homework.get('status')
+    if 'homework_name' in homework:
+        homework_name = homework.get('homework_name')
+    else:
+        raise KeyError('Отсутствует ключ "homework_name" в ответе от API')
+    if 'status' in homework:
+        homework_status = homework.get('status')
+    else:
+        raise KeyError('Отсутствует ключ "status" в ответе от API')
     try:
-        verdict = HOMEWORK_STATUSES.get(homework_status)
+        verdict = HOMEWORK_STATUSES[homework_status]
     except KeyError:
         message = f'API вернул неизвестный запрос {homework_status} for {homework_name}'
         raise ApiErrorException(message)
@@ -92,7 +95,6 @@ def check_tokens():
 def main():
     """Основная логика работы бота."""
     logger.info('Бот запущен')
-
     if not check_tokens():
         message = (
             'Отсутствуют обязательные переменные окружения: '
@@ -101,29 +103,22 @@ def main():
         )
         logger.critical(message)
         sys.exit(message)
-
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
-
     prev_upd_time = ''
 
     while True:
         try:
             response = get_api_answer(current_timestamp)
             homework_list = check_response(response)
-
             for homework in homework_list:
                 upd_time = homework.get('date_updated')
-
                 if upd_time != prev_upd_time:
-                    #send_message(upd_time)
                     prev_upd_time = upd_time
                     message = parse_status(homework)
                     send_message(bot, message)
-
             current_timestamp = int(time.time())
             time.sleep(RETRY_TIME)
-
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
