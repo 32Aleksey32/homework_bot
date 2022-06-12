@@ -81,7 +81,9 @@ def parse_status(homework):
     try:
         verdict = HOMEWORK_STATUSES[homework_status]
     except KeyError:
-        message = f'API вернул неизвестный запрос {homework_status} for {homework_name}'
+        message = ('API вернул неизвестный запрос'
+                   f' {homework_status} for {homework_name}'
+                   )
         raise ApiErrorException(message)
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
