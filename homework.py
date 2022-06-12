@@ -11,6 +11,17 @@ from http import HTTPStatus
 
 load_dotenv()
 
+# если я вкладываю логгер в __main__, у меня не проходят тесты
+# пишет "NameError: name 'logger' is not defined"
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler(sys.stdout)
+logger.addHandler(handler)
+
+formatter = logging.Formatter('%(asctime)s, %(levelname)s, %(message)s')
+handler.setFormatter(formatter)
+
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
@@ -131,12 +142,5 @@ def main():
 
 if __name__ == '__main__':
 
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
-    handler = logging.StreamHandler(sys.stdout)
-    logger.addHandler(handler)
-
-    formatter = logging.Formatter('%(asctime)s, %(levelname)s, %(message)s')
-    handler.setFormatter(formatter)
-
+    # если я вкладываю логгер сюда у меня не проходят тесты,
     main()
