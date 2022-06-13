@@ -3,6 +3,7 @@ import sys
 import time
 import requests
 import telegram
+from telegram import TelegramError
 import logging
 from dotenv import load_dotenv
 from exceptions import ApiErrorException
@@ -10,9 +11,6 @@ from http import HTTPStatus
 
 
 load_dotenv()
-
-# если я вкладываю логгер в __main__, у меня не проходят тесты
-# пишет "NameError: name 'logger' is not defined"
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -45,6 +43,7 @@ def send_message(bot, message):
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except telegram.error.TelegramError(message):
         logger.error('Ошибка отправки сообщения в телеграм.')
+        raise TelegramError(f'Ошибка отправки сообщения в телеграм: {message}')
     else:
         logger.info('Сообщение в телеграм успешно отправлено.')
 
@@ -54,23 +53,34 @@ def get_api_answer(current_timestamp):
     logger.info('Проверка на запрос к APi-сервису начата.')
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
+    data = {
+        'url': ENDPOINT.format(token=TELEGRAM_TOKEN),
+        'headers': HEADERS,
+        'params': params,
+    }
     try:
-        response = requests.get(ENDPOINT, headers=HEADERS, params=params)
+        response = requests.get(**data) # requests.get(ENDPOINT, headers=HEADERS, params=params)
         if response.status_code == HTTPStatus.OK:
             return response.json()
         else:
-            # logger.error('Эндпоинт не доступен.')
-            raise ApiErrorException('Эндпоинт не доступен.')
-    except requests.exceptions.RequestException:
-        raise ApiErrorException('Ошибка подключения к эндпоинту Api-сервиса.')
+            raise ApiErrorException(
+                'Неверный ответ сервера: '
+                f'http_code = {response.status_code}; '
+                f'reason = {response.reason}; '
+                f'content = {response.text}'
+            )
+    except Exception as error:
+        raise ApiErrorException(f'Ошибка подключения к эндпоинту Api-сервиса:{error}')
 
 
 def check_response(response):
     """Проверяет ответ API на корректность."""
     logger.info('Проверка ответа от API начата')
-    homework_list = response['homeworks']
+    homework_list = response.get('homeworks')
     if 'homeworks' not in response:
         raise TypeError('В ответе API нет ключа домашнее задание')
+    if 'current_date' not in response:
+        raise TypeError('В ответе API нет ключа текущая дата')
     if not isinstance(homework_list, list):
         raise TypeError(
             f'Ответ от API не является списком: response = {response}'
@@ -142,5 +152,4 @@ def main():
 
 if __name__ == '__main__':
 
-    # если я вкладываю логгер сюда у меня не проходят тесты,
     main()
