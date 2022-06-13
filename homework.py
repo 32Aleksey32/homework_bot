@@ -42,8 +42,9 @@ def send_message(bot, message):
         logger.info('Бот отправляет сообщение в телеграм.', message)
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except telegram.error.TelegramError(message):
-        logger.error('Ошибка отправки сообщения в телеграм.')
-        raise TelegramError(f'Ошибка отправки сообщения в телеграм: {message}')
+        message = f'Ошибка отправки сообщения в телеграм: {message}'
+        logger.error(message)
+        raise TelegramError(message)
     else:
         logger.info('Сообщение в телеграм успешно отправлено.')
 
@@ -59,7 +60,7 @@ def get_api_answer(current_timestamp):
         'params': params,
     }
     try:
-        response = requests.get(**data) # requests.get(ENDPOINT, headers=HEADERS, params=params)
+        response = requests.get(**data)
         if response.status_code == HTTPStatus.OK:
             return response.json()
         else:
@@ -70,7 +71,8 @@ def get_api_answer(current_timestamp):
                 f'content = {response.text}'
             )
     except Exception as error:
-        raise ApiErrorException(f'Ошибка подключения к эндпоинту Api-сервиса:{error}')
+        message = f'Ошибка подключения к эндпоинту Api-сервиса:{error}'
+        raise ApiErrorException(message)
 
 
 def check_response(response):
