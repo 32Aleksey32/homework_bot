@@ -6,7 +6,7 @@ import telegram
 from telegram import TelegramError
 import logging
 from dotenv import load_dotenv
-from exceptions import ApiErrorException
+from exceptions import ApiErrorException, ApiResponseError
 from http import HTTPStatus
 
 
@@ -79,16 +79,28 @@ def check_response(response):
     """Проверяет ответ API на корректность."""
     logger.info('Проверка ответа от API начата')
     homework_list = response.get('homeworks')
+
     if 'homeworks' not in response:
-        raise TypeError('В ответе API нет ключа домашнее задание')
+        raise ApiResponseError(
+            'В ответе API отсутствуют необходимый ключ "homeworks", '
+            f'response = {response}'
+        )
     if 'current_date' not in response:
-        raise TypeError('В ответе API нет ключа текущая дата')
+        raise ApiResponseError(
+            'В ответе API отсутствуют необходимый ключ "current_date", '
+            f'response = {response}'
+        )
     if not isinstance(homework_list, list):
-        raise TypeError(
+        raise ApiResponseError(
             f'Ответ от API не является списком: response = {response}'
         )
-    return homework_list
+    if isinstance(homework_list, dict):
+        raise TypeError(
+            'В ответе от API в списке пришли не словари, '
+            f'response = {response}'
+        )
 
+    return homework_list
 
 def parse_status(homework):
     """Извлекает из информации статус домашней работы."""
