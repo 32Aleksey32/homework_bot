@@ -98,7 +98,6 @@ def check_response(response):
         raise TypeError(
             f'Ответ от API не является списком: response = {response}'
         )
-
     return homework_list
 
 
