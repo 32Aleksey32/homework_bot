@@ -82,7 +82,6 @@ def check_response(response):
 
     if isinstance(response, dict):
         homework_list = response['homeworks']
-
         if 'homeworks' not in response:
             raise KeyError(
                 'В ответе API отсутствуют необходимый ключ "homeworks", '
@@ -98,6 +97,7 @@ def check_response(response):
         raise TypeError(
             f'Ответ от API не является списком: response = {response}'
         )
+
     return homework_list
 
 
