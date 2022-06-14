@@ -61,15 +61,14 @@ def get_api_answer(current_timestamp):
     }
     try:
         response = requests.get(**data)
-        if response.status_code == HTTPStatus.OK:
-            return response.json()
-        else:
+        if response.status_code != HTTPStatus.OK:
             raise ApiErrorException(
                 'Неверный ответ сервера: '
                 f'http_code = {response.status_code}; '
                 f'reason = {response.reason}; '
                 f'content = {response.text}'
             )
+        return response.json()
     except Exception as error:
         message = f'Ошибка подключения к эндпоинту Api-сервиса:{error}'
         raise ApiErrorException(message)
@@ -78,26 +77,26 @@ def get_api_answer(current_timestamp):
 def check_response(response):
     """Проверяет ответ API на корректность."""
     logger.info('Проверка ответа от API начата')
-    homework_list = response.get('homeworks')
 
-    if 'homeworks' not in response:
-        raise KeyError(
-            'В ответе API отсутствуют необходимый ключ "homeworks", '
-            f'response = {response}'
-        )
-    if 'current_date' not in response:
-        raise KeyError(
-            'В ответе API отсутствуют необходимый ключ "current_date", '
-            f'response = {response}'
-        )
+    homework_list = {}
+
+    if isinstance(response, dict):
+        homework_list = response['homeworks']
+
+        if 'homeworks' not in response:
+            raise KeyError(
+                'В ответе API отсутствуют необходимый ключ "homeworks", '
+                f'response = {response}'
+            )
+        if 'current_date' not in response:
+            raise KeyError(
+                'В ответе API отсутствуют необходимый ключ "current_date", '
+                f'response = {response}'
+            )
+
     if not isinstance(homework_list, list):
-        raise KeyError(
-            f'Ответ от API не является списком: response = {response}'
-        )
-    if isinstance(homework_list, dict):
         raise TypeError(
-            'В ответе от API в списке пришли не словари, '
-            f'response = {response}'
+            f'Ответ от API не является списком: response = {response}'
         )
 
     return homework_list
