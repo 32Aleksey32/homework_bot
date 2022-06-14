@@ -137,7 +137,7 @@ def main():
         logger.critical(message)
         sys.exit(message)
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = int(time.time()) -22
+    current_timestamp = int(time.time())
     prev_upd_time = ''
 
     while True:
