@@ -39,15 +39,12 @@ HOMEWORK_STATUSES = {
 def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
     try:
-        logger.info('Бот отправляет сообщение в телеграм.', message)
+        logger.info('Бот отправляет сообщение в телеграм.%s', message)
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except telegram.error.TelegramError(message):
-        message = f'Ошибка отправки сообщения в телеграм: {message}'
-        logger.error(message)
-        raise TelegramError(message)
+        raise TelegramError(f'Ошибка отправки сообщения в телеграм: {message}')
     else:
         logger.info('Сообщение в телеграм успешно отправлено.')
-
 
 def get_api_answer(current_timestamp):
     """Делает запрос к эндпоинту Api-сервиса и возвращает ответ."""
@@ -76,7 +73,7 @@ def get_api_answer(current_timestamp):
 
 def check_response(response):
     """Проверяет ответ API на корректность."""
-    logger.info('Проверка ответа от API начата')
+    logger.info('Проверка ответа от API начата.')
 
     homework_list = {}
 
@@ -140,7 +137,7 @@ def main():
         logger.critical(message)
         sys.exit(message)
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = int(time.time())
+    current_timestamp = int(time.time()) - 131387
     prev_upd_time = ''
 
     while True:
